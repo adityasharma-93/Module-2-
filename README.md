@@ -4,9 +4,6 @@ This repository contains a Solidity smart contract called BankATM which provides
 
 
 
-
-
-
 ## Contract Functionality
 
 
@@ -55,4 +52,4 @@ hardhat installation
 
 
 ## Author
-Kuldeep Yadav
+Aditya Sharma 21BCS1573
