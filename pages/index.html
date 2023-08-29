@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdityaBank</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background:rgb(228, 228, 129);
+        }
+        
+        #header {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        h1 {
+            font-weight: bold;
+        }
+        
+        nav {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        h2 {
+            font-weight: bold;
+        }
+        
+        h3 {
+            font-weight: bold;
+            margin-top: 0;
+        }
+        
+        input[type="number"] {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            width: 100%;
+        }
+        
+        button {
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        ul#transactionList {
+            list-style-type: none;
+            padding: 0;
+            border: 1px solid #ddd;
+            margin-top: 20px;
+        }
+        
+        ul#transactionList li {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        footer {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>AdityaBank </h1>
+    </div>
+
+    <nav>
+        <h2>Welcome To My Bank </h2>
+    </nav>
+
+    <div class="container">
+        <div>
+            <h2>Your Address: <span id="userAddress"></span></h2>
+            <h2>Contract Address: <span id="contractAddress"></span></h2>
+            <h2>Your Balance: <span id="userBalance"></span> ETH</h2>
+        </div>
+
+        <div class="section">
+            <h3>Deposit Balance</h3>
+            <input type="number" id="depositAmount" placeholder="Enter amount">
+            <button onclick="deposit()">Deposit</button>
+        </div>
+
+        <div class="section">
+            <h3>Withdraw Balance</h3>
+            <input type="number" id="withdrawAmount" placeholder="Enter amount">
+            <button onclick="withdraw()">Withdraw</button>
+        </div>
+
+        <div class="section">
+            <h3>Show Balance</h3>
+            <button onclick="showBalance()">Show Balance</button>
+            <p id="balanceDisplay"></p>
+        </div>
+
+        <div class="section">
+          <h3>Transaction History</h3>
+          <ul id="transactionList"></ul>
+      </div>
+      
+    </div>
+
+    <footer>
+        &copy; 2023 AdityaBank Name. All rights reserved.
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.3/dist/web3.min.js"></script>
+    <script>
+        let web3;
+        let contract;
+
+        async function initWeb3() {
+            if (typeof window.ethereum !== 'undefined') {
+                web3 = new Web3(window.ethereum);
+                await window.ethereum.enable();
+
+                // Replace with your contract address and ABI
+                const contractAddress ='0x9Fc439acc61cEc52f485EE9FF2D3f897dc14a50e';
+    const contractAbi = [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "BalanceBurned",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "BalanceDeposited",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "BalanceWithdrawn",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "burnBalance",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "depositBalance",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getContractBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getTransactionCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "index",
+          "type": "uint256"
+        }
+      ],
+      "name": "getTransactionHistory",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "account",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct AdityaBank.Transaction",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "showBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdrawBalance",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ];
+
+
+                contract = new web3.eth.Contract(contractAbi, contractAddress);
+
+                const accounts = await web3.eth.getAccounts();
+                const userAddress = accounts[0];
+
+                updateAddresses(userAddress, contractAddress);
+            } else {
+                console.log("Web3 not found. Please install MetaMask.");
+            }
+        }
+
+        async function updateAddresses(userAddress, contractAddress) {
+            document.getElementById('userAddress').textContent = userAddress;
+            document.getElementById('contractAddress').textContent = contractAddress;
+        }
+
+        async function deposit() {
+            const depositAmount = document.getElementById('depositAmount').value;
+            if (!depositAmount) return;
+
+            const accounts = await web3.eth.getAccounts();
+            const userAddress = accounts[0];
+
+            await contract.methods.depositBalance().send({
+                from: userAddress,
+                value: web3.utils.toWei(depositAmount, 'ether')
+            });
+
+            showBalance();
+        }
+
+        async function withdraw() {
+            const withdrawAmount = document.getElementById('withdrawAmount').value;
+            if (!withdrawAmount) return;
+
+            const accounts = await web3.eth.getAccounts();
+            const userAddress = accounts[0];
+
+            await contract.methods.withdrawBalance(web3.utils.toWei(withdrawAmount, 'ether')).send({ from: userAddress });
+
+            showBalance();
+        }
+
+        async function showBalance() {
+            const accounts = await web3.eth.getAccounts();
+            const userAddress = accounts[0];
+
+            const balance = await contract.methods.showBalance().call({ from: userAddress });
+            document.getElementById('userBalance').textContent = web3.utils.fromWei(balance, 'ether');
+            document.getElementById('balanceDisplay').textContent = `Your balance is: ${web3.utils.fromWei(balance, 'ether')} ETH`;
+        }
+
+
+        
+
+        async function showTransactionHistory() {
+    const transactionCount = await contract.methods.getTransactionCount().call();
+    const transactionListElement = document.getElementById('transactionList');
+    transactionListElement.innerHTML = ''; // Clear the list before populating
+
+    for (let i = 0; i < transactionCount; i++) {
+        const transaction = await contract.methods.getTransactionHistory(i).call();
+        const formattedTimestamp = new Date(transaction.timestamp * 1000).toLocaleString();
+
+        const listItem = document.createElement('li');
+        listItem.textContent = `Account: ${transaction.account}\nAmount: ${web3.utils.fromWei(transaction.amount, 'ether')} ETH\nTimestamp: ${formattedTimestamp}`;
+        transactionListElement.appendChild(listItem);
+    }
+}
+
+window.addEventListener('load', async () => {
+            await initWeb3();
+        });
+
+window.addEventListener('load', async () => {
+    await initWeb3();
+    showTransactionHistory(); // Display transaction history when the page loads
+});
+    
+    </script>
+</body>
+</html>
